@@ -1,0 +1,22 @@
+[
+  {
+    "id": 1,
+    "name": "John Smith",
+    "position": "Manager",
+    "salary": 3000,
+    "email": "john@betterdeal.com",
+    "phone": "+1234567890",
+    "hire_date": "2024-01-15",
+    "status": "active"
+  },
+  {
+    "id": 2,
+    "name": "Maria Garcia",
+    "position": "Sales Associate",
+    "salary": 2000,
+    "email": "maria@betterdeal.com",
+    "phone": "+1234567891",
+    "hire_date": "2024-02-01",
+    "status": "active"
+  }
+]

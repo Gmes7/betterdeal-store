@@ -1,0 +1,10 @@
+# Update the PRODUCTS data in app.py to use placeholder images
+PRODUCTS = [
+    {
+        "id": 1,
+        "name": "Samsung Galaxy S24",
+        # ... other fields
+        "image": "https://via.placeholder.com/400x400/0071CE/FFFFFF?text=Samsung+Galaxy",
+    },
+    # ... other products
+]

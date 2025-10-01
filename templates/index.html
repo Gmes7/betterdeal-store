@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- Promotional Banner -->
+<div class="banner mb-3" style="background: linear-gradient(135deg, var(--primary-blue), #005a9c); color: white; padding: 2rem; border-radius: 8px;">
+    <div class="text-center">
+        <h2 style="font-size: 2rem; margin-bottom: 0.5rem;">🚚 FREE Shipping on Orders Over $35!</h2>
+        <p style="font-size: 1.2rem;">Shop now and get your favorite products delivered for free</p>
+    </div>
+</div>
+
+<!-- Category Carousel -->
+<section class="mb-3">
+    <h2 class="mb-2" style="color: var(--primary-blue);">Shop by Category</h2>
+    <div class="grid grid-4">
+        {% for category in categories %}
+        <div class="card text-center" style="padding: 1.5rem; cursor: pointer;"
+             onclick="location.href='{{ url_for('search') }}?q={{ category.name }}'">
+            <div style="font-size: 2.5rem; margin-bottom: 1rem;">{{ category.icon }}</div>
+            <h3 style="color: var(--primary-blue); margin-bottom: 0.5rem;">{{ category.name }}</h3>
+            <p class="text-muted">{{ category.count }} products</p>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
+<!-- Featured Products -->
+<section class="mb-3">
+    <h2 class="mb-2" style="color: var(--primary-blue);">Featured Products</h2>
+    <div class="grid grid-4">
+        {% for product in featured_products %}
+        <div class="card" onclick="location.href='{{ url_for('product_detail', product_id=product.id) }}'" style="cursor: pointer;">
+            <div style="position: relative;">
+                <img src="{{ product.image }}" alt="{{ product.name }}" style="width: 100%; height: 200px; object-fit: cover;">
+                {% if product.discount %}
+                <div style="position: absolute; top: 10px; right: 10px; background: var(--danger); color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-weight: bold;">
+                    -{{ product.discount }}%
+                </div>
+                {% endif %}
+            </div>
+            <div style="padding: 1rem;">
+                <h4 style="margin-bottom: 0.5rem; color: var(--gray-dark);">{{ product.name }}</h4>
+                <p class="text-muted" style="font-size: 0.9rem; margin-bottom: 0.5rem;">{{ product.brand }}</p>
+                <div style="display: flex; align-items: center; margin-bottom: 0.5rem;">
+                    <span style="color: #ffc107;">⭐</span>
+                    <span style="margin: 0 0.5rem;">{{ product.rating }}</span>
+                    <span class="text-muted">({{ product.reviews }})</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <span style="font-size: 1.2rem; font-weight: bold; color: var(--primary-blue);">${{ product.price }}</span>
+                    {% if product.original_price > product.price %}
+                    <span style="text-decoration: line-through; color: var(--danger);">${{ product.original_price }}</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
+<!-- Best Sellers -->
+<section class="mb-3">
+    <h2 class="mb-2" style="color: var(--primary-blue);">Best Sellers</h2>
+    <div class="grid grid-4">
+        {% for product in best_sellers %}
+        <div class="card" onclick="location.href='{{ url_for('product_detail', product_id=product.id) }}'" style="cursor: pointer;">
+            <div style="position: relative;">
+                <img src="{{ product.image }}" alt="{{ product.name }}" style="width: 100%; height: 200px; object-fit: cover;">
+                {% if product.discount %}
+                <div style="position: absolute; top: 10px; right: 10px; background: var(--danger); color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-weight: bold;">
+                    -{{ product.discount }}%
+                </div>
+                {% endif %}
+            </div>
+            <div style="padding: 1rem;">
+                <h4 style="margin-bottom: 0.5rem; color: var(--gray-dark);">{{ product.name }}</h4>
+                <p class="text-muted" style="font-size: 0.9rem; margin-bottom: 0.5rem;">{{ product.brand }}</p>
+                <div style="display: flex; align-items: center; margin-bottom: 0.5rem;">
+                    <span style="color: #ffc107;">⭐</span>
+                    <span style="margin: 0 0.5rem;">{{ product.rating }}</span>
+                    <span class="text-muted">({{ product.reviews }})</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <span style="font-size: 1.2rem; font-weight: bold; color: var(--primary-blue);">${{ product.price }}</span>
+                    {% if product.original_price > product.price %}
+                    <span style="text-decoration: line-through; color: var(--danger);">${{ product.original_price }}</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

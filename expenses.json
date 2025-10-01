@@ -1,0 +1,18 @@
+[
+  {
+    "id": 1,
+    "date": "2024-03-01",
+    "category": "Rent",
+    "description": "Store Rent",
+    "amount": 1500,
+    "payment_method": "bank_transfer"
+  },
+  {
+    "id": 2,
+    "date": "2024-03-02",
+    "category": "Utilities",
+    "description": "Electricity Bill",
+    "amount": 300,
+    "payment_method": "bank_transfer"
+  }
+]
