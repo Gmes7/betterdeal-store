@@ -75,9 +75,11 @@
                 <span>$<span id="total-display">{{ "%.2f"|format(final_total) }}</span></span>
             </div>
 
-            <div id="shipping-message" style="background: var(--primary-yellow); padding: 1rem; border-radius: 4px; margin-bottom: 1.5rem; text-align: center; {% if shipping == 0 %}display: none;{% endif %}">
+            {% if shipping > 0 %}
+            <div style="background: var(--primary-yellow); padding: 1rem; border-radius: 4px; margin-bottom: 1.5rem; text-align: center;">
                 <strong>Add $<span id="shipping-difference">{{ "%.2f"|format(35 - subtotal) }}</span> to get FREE shipping!</strong>
             </div>
+            {% endif %}
 
             <button onclick="proceedToCheckout()" class="btn btn-success" style="width: 100%; padding: 1rem; font-size: 1.1rem;">
                 🛒 Proceed to Checkout
@@ -118,12 +120,15 @@
             }
         }
 
-        // Update the quantity display immediately for better UX
+        // Update the quantity display immediately
         quantityElement.textContent = currentQuantity;
 
-        // Update item total
+        // Update item total immediately
         const itemTotal = productPrices[productId] * currentQuantity;
         document.getElementById(`item-total-${productId}`).textContent = itemTotal.toFixed(2);
+
+        // Update cart totals
+        updateCartTotals();
 
         // Send update to server
         const formData = new FormData();
@@ -137,9 +142,6 @@
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                // Update cart totals
-                updateCartTotals();
-                // Update cart badge
                 updateCartBadge(data.cart_count);
             } else {
                 // Revert if there was an error
@@ -157,8 +159,8 @@
 
         // Calculate new subtotal from all items
         {% for item in cart_items %}
-        const quantity{{ item.id }} = parseInt(document.getElementById(`quantity-{{ item.id }}`).textContent);
-        subtotal += {{ item.price }} * quantity{{ item.id }};
+        const quantity = parseInt(document.getElementById(`quantity-{{ item.id }}`).textContent);
+        subtotal += {{ item.price }} * quantity;
         {% endfor %}
 
         // Calculate shipping
@@ -180,11 +182,13 @@
         // Update shipping message
         const shippingMessage = document.getElementById('shipping-message');
         const shippingDifference = document.getElementById('shipping-difference');
-        if (subtotal < 35) {
-            shippingMessage.style.display = 'block';
-            shippingDifference.textContent = (35 - subtotal).toFixed(2);
-        } else {
-            shippingMessage.style.display = 'none';
+        if (shippingMessage && shippingDifference) {
+            if (subtotal < 35) {
+                shippingMessage.style.display = 'block';
+                shippingDifference.textContent = (35 - subtotal).toFixed(2);
+            } else {
+                shippingMessage.style.display = 'none';
+            }
         }
     }
 
@@ -258,5 +262,30 @@
     function proceedToCheckout() {
         window.location.href = "{{ url_for('checkout') }}";
     }
+
+    // Initialize totals when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        updateCartTotals();
+    });
 </script>
+
+<style>
+    .cart-item {
+        transition: all 0.3s ease;
+    }
+
+    .cart-item:hover {
+        background-color: #f8f9fa;
+    }
+
+    /* Animation for updates */
+    @keyframes highlightUpdate {
+        0% { background-color: #e3f2fd; }
+        100% { background-color: transparent; }
+    }
+
+    .item-updated {
+        animation: highlightUpdate 1s ease;
+    }
+</style>
 {% endblock %}

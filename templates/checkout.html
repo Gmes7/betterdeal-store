@@ -177,12 +177,15 @@
             }
         }
 
-        // Update the quantity display immediately for better UX
+        // Update the quantity display immediately
         quantityElement.textContent = currentQuantity;
 
-        // Update item total
+        // Update item total immediately
         const itemTotal = productPrices[productId] * currentQuantity;
         document.getElementById(`checkout-item-total-${productId}`).textContent = itemTotal.toFixed(2);
+
+        // Update checkout totals
+        updateCheckoutTotals();
 
         // Send update to server
         const formData = new FormData();
@@ -196,9 +199,6 @@
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                // Update checkout totals
-                updateCheckoutTotals();
-                // Update cart badge
                 updateCartBadge(data.cart_count);
             } else {
                 // Revert if there was an error
@@ -216,8 +216,9 @@
 
         // Calculate new subtotal from all items
         {% for item in cart_items %}
-        if (document.getElementById(`checkout-quantity-{{ item.id }}`)) {
-            const quantity = parseInt(document.getElementById(`checkout-quantity-{{ item.id }}`).textContent);
+        const quantityElement = document.getElementById(`checkout-quantity-{{ item.id }}`);
+        if (quantityElement) {
+            const quantity = parseInt(quantityElement.textContent);
             subtotal += {{ item.price }} * quantity;
         }
         {% endfor %}
@@ -355,6 +356,9 @@
             codOption.checked = true;
             codOption.closest('.payment-option').style.borderColor = 'var(--primary-blue)';
         }
+
+        // Initialize totals
+        updateCheckoutTotals();
     });
 </script>
 
