@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1 class="mb-2" style="color: var(--primary-blue);">
+    {% if query %}
+        Search Results for "{{ query }}"
+    {% else %}
+        Search Products
+    {% endif %}
+</h1>
+
+{% if query %}
+<p class="text-muted mb-3">Found {{ results_count }} results</p>
+{% endif %}
+
+{% if results %}
+<div class="grid grid-4">
+    {% for product in results %}
+    <div class="card" onclick="location.href='{{ url_for('product_detail', product_id=product.id) }}'" style="cursor: pointer;">
+        <div style="position: relative;">
+            <img src="{{ product.image }}" alt="{{ product.name }}" style="width: 100%; height: 200px; object-fit: cover;">
+            {% if product.discount %}
+            <div style="position: absolute; top: 10px; right: 10px; background: var(--danger); color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-weight: bold;">
+                -{{ product.discount }}%
+            </div>
+            {% endif %}
+        </div>
+        <div style="padding: 1rem;">
+            <h4 style="margin-bottom: 0.5rem; color: var(--gray-dark);">{{ product.name }}</h4>
+            <p class="text-muted" style="font-size: 0.9rem; margin-bottom: 0.5rem;">{{ product.brand }}</p>
+            <div style="display: flex; align-items: center; margin-bottom: 0.5rem;">
+                <span style="color: #ffc107;">⭐</span>
+                <span style="margin: 0 0.5rem;">{{ product.rating }}</span>
+                <span class="text-muted">({{ product.reviews }})</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <span style="font-size: 1.2rem; font-weight: bold; color: var(--primary-blue);">${{ product.price }}</span>
+                {% if product.original_price > product.price %}
+                <span style="text-decoration: line-through; color: var(--danger);">${{ product.original_price }}</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% elif query %}
+<div class="card text-center" style="padding: 3rem;">
+    <div style="font-size: 4rem; margin-bottom: 1rem;">🔍</div>
+    <h2 style="margin-bottom: 1rem; color: var(--gray-dark);">No results found</h2>
+    <p class="text-muted" style="margin-bottom: 2rem;">Try different keywords or browse categories</p>
+    <a href="{{ url_for('index') }}" class="btn btn-primary">Browse Categories</a>
+</div>
+{% else %}
+<div class="card text-center" style="padding: 3rem;">
+    <div style="font-size: 4rem; margin-bottom: 1rem;">🔍</div>
+    <h2 style="margin-bottom: 1rem; color: var(--gray-dark);">Search Products</h2>
+    <p class="text-muted" style="margin-bottom: 2rem;">Enter keywords to find products</p>
+</div>
+{% endif %}
+{% endblock %}

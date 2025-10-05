@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Business Dashboard - BetterDeal</title>
+    <style>
+        :root {
+            --primary-blue: #0071CE;
+            --success: #28a745;
+            --warning: #ffc107;
+            --danger: #dc3545;
+            --info: #17a2b8;
+            --purple: #6f42c1;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f8f9fa;
+        }
+
+        .admin-header {
+            background: var(--primary-blue);
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .admin-nav {
+            background: white;
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            overflow-x: auto;
+        }
+
+        .admin-nav a {
+            margin-right: 1rem;
+            text-decoration: none;
+            color: var(--primary-blue);
+            font-weight: bold;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            transition: background 0.3s;
+            white-space: nowrap;
+        }
+
+        .admin-nav a:hover, .admin-nav a.active {
+            background: #f0f7ff;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .stat-card h3 {
+            color: #666;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-growth {
+            font-size: 0.8rem;
+            font-weight: bold;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+        }
+
+        .growth-positive { background: #d4edda; color: #155724; }
+        .growth-negative { background: #f8d7da; color: #721c24; }
+
+        .revenue { color: var(--success); }
+        .expenses { color: var(--danger); }
+        .profit { color: var(--primary-blue); }
+        .orders { color: var(--purple); }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 2rem;
+        }
+
+        .card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+
+        .card h2 {
+            color: var(--primary-blue);
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #eee;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        th {
+            background: #f8f9fa;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            text-decoration: none;
+            display: inline-block;
+            margin: 0.25rem;
+        }
+
+        .btn-primary { background: var(--primary-blue); color: white; }
+        .btn-success { background: var(--success); color: white; }
+        .btn-info { background: var(--info); color: white; }
+
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .action-btn {
+            display: block;
+            padding: 1rem;
+            background: white;
+            border: 2px solid var(--primary-blue);
+            color: var(--primary-blue);
+            text-decoration: none;
+            text-align: center;
+            border-radius: 8px;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .action-btn:hover {
+            background: var(--primary-blue);
+            color: white;
+        }
+
+        .status-active { color: var(--success); font-weight: bold; }
+        .status-inactive { color: var(--danger); font-weight: bold; }
+    </style>
+</head>
+<body>
+    <header class="admin-header">
+        <h1>📊 BetterDeal Business Dashboard</h1>
+        <div>
+            <a href="{{ url_for('admin_dashboard') }}" style="color: var(--primary-yellow); margin-right: 1rem;">Main Dashboard</a>
+            <a href="{{ url_for('index') }}" target="_blank" style="color: var(--primary-yellow); margin-right: 1rem;">View Store</a>
+            <a href="{{ url_for('admin_logout') }}" style="color: white;">Logout</a>
+        </div>
+    </header>
+
+    <nav class="admin-nav">
+        <a href="{{ url_for('admin_dashboard') }}">Main Dashboard</a>
+        <a href="{{ url_for('admin_business_dashboard') }}" class="active">Business Dashboard</a>
+        <a href="{{ url_for('admin_financial_reports') }}">Financial Reports</a>
+        <a href="{{ url_for('admin_employees') }}">Employees</a>
+        <a href="{{ url_for('admin_expenses') }}">Expenses</a>
+        <a href="{{ url_for('admin_payroll') }}">Payroll</a>
+        <a href="{{ url_for('admin_orders') }}">Orders</a>
+        <a href="{{ url_for('admin_products') }}">Products</a>
+    </nav>
+
+    <div class="container">
+        <h2>Business Overview - {{ report.current_month }}</h2>
+
+        <!-- Key Metrics -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>Total Revenue</h3>
+                <div class="stat-number revenue">${{ "%.2f"|format(report.revenue.current) }}</div>
+                <div class="stat-growth {% if report.revenue.growth >= 0 %}growth-positive{% else %}growth-negative{% endif %}">
+                    {% if report.revenue.growth >= 0 %}↗{% else %}↘{% endif %}
+                    {{ "%.1f"|format(report.revenue.growth) }}% vs last month
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <h3>Total Expenses</h3>
+                <div class="stat-number expenses">${{ "%.2f"|format(report.expenses.current) }}</div>
+                <div class="stat-growth {% if report.expenses.growth <= 0 %}growth-positive{% else %}growth-negative{% endif %}">
+                    {% if report.expenses.growth <= 0 %}↘{% else %}↗{% endif %}
+                    {{ "%.1f"|format(report.expenses.growth) }}% vs last month
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <h3>Net Profit</h3>
+                <div class="stat-number profit">${{ "%.2f"|format(report.profit.current) }}</div>
+                <div class="stat-growth {% if report.profit.growth >= 0 %}growth-positive{% else %}growth-negative{% endif %}">
+                    {% if report.profit.growth >= 0 %}↗{% else %}↘{% endif %}
+                    {{ "%.1f"|format(report.profit.growth) }}% vs last month
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <h3>Orders This Month</h3>
+                <div class="stat-number orders">{{ report.order_count }}</div>
+                <div style="color: #666; font-size: 0.9rem;">
+                    Avg: ${{ "%.2f"|format(report.average_order_value) }}
+                </div>
+            </div>
+        </div>
+
+        <div class="dashboard-grid">
+            <!-- Left Column -->
+            <div>
+                <!-- Recent Orders -->
+                <div class="card">
+                    <h2>Recent Orders</h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Order ID</th>
+                                <th>Customer</th>
+                                <th>Date</th>
+                                <th>Amount</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for order in recent_orders %}
+                            <tr>
+                                <td>#{{ order.id }}</td>
+                                <td>{{ order.customer_name }}</td>
+                                <td>{{ order.order_date[:10] }}</td>
+                                <td>${{ "%.2f"|format(order.total_amount) }}</td>
+                                <td>
+                                    <span style="
+                                        padding: 0.25rem 0.5rem;
+                                        border-radius: 4px;
+                                        font-size: 0.8rem;
+                                        font-weight: bold;
+                                        {% if order.status == 'delivered' %}background: #d4edda; color: #155724;
+                                        {% elif order.status == 'pending' %}background: #fff3cd; color: #856404;
+                                        {% else %}background: #cce7ff; color: #004085;{% endif %}
+                                    ">
+                                        {{ order.status|upper }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Recent Expenses -->
+                <div class="card">
+                    <h2>Recent Expenses</h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Category</th>
+                                <th>Description</th>
+                                <th>Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for expense in recent_expenses %}
+                            <tr>
+                                <td>{{ expense.date }}</td>
+                                <td>{{ expense.category }}</td>
+                                <td>{{ expense.description }}</td>
+                                <td style="color: var(--danger); font-weight: bold;">-${{ "%.2f"|format(expense.amount) }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Right Column -->
+            <div>
+                <!-- Employee Summary -->
+                <div class="card">
+                    <h2>Employee Summary</h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Position</th>
+                                <th>Salary</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for employee in employees %}
+                            <tr>
+                                <td>{{ employee.name }}</td>
+                                <td>{{ employee.position }}</td>
+                                <td>${{ "%.2f"|format(employee.salary) }}</td>
+                                <td>
+                                    <span class="{% if employee.status == 'active' %}status-active{% else %}status-inactive{% endif %}">
+                                        {{ employee.status|upper }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #eee;">
+                        <strong>Total Monthly Payroll: ${{ "%.2f"|format(report.salaries) }}</strong>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="card">
+                    <h2>Quick Actions</h2>
+                    <div class="quick-actions">
+                        <a href="{{ url_for('admin_add_expense') }}" class="action-btn">Add Expense</a>
+                        <a href="{{ url_for('admin_add_employee') }}" class="action-btn">Add Employee</a>
+                        <a href="{{ url_for('admin_financial_reports') }}" class="action-btn">View Reports</a>
+                        <a href="{{ url_for('admin_export_report') }}" class="action-btn">Export Report</a>
+                    </div>
+                </div>
+
+                <!-- Profit Breakdown -->
+                <div class="card">
+                    <h2>Profit Breakdown</h2>
+                    <div style="display: grid; gap: 0.5rem;">
+                        <div style="display: flex; justify-content: space-between;">
+                            <span>Revenue:</span>
+                            <span style="color: var(--success);">+${{ "%.2f"|format(report.revenue.current) }}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <span>Expenses:</span>
+                            <span style="color: var(--danger);">-${{ "%.2f"|format(report.expenses.current) }}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <span>Salaries:</span>
+                            <span style="color: var(--danger);">-${{ "%.2f"|format(report.salaries) }}</span>
+                        </div>
+                        <hr>
+                        <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 1.1rem;">
+                            <span>Net Profit:</span>
+                            <span style="color: {% if report.profit.current >= 0 %}var(--success){% else %}var(--danger){% endif %};">
+                                {% if report.profit.current >= 0 %}+{% endif %}${{ "%.2f"|format(report.profit.current) }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+
+<nav class="admin-nav">
+    <a href="{{ url_for('admin_dashboard') }}">Dashboard</a>
+    <a href="{{ url_for('admin_products') }}">Products</a>
+    <a href="{{ url_for('admin_stock_management') }}">Stock Management</a>
+    <a href="{{ url_for('admin_orders') }}">Order Management</a>
+    <a href="{{ url_for('admin_add_product') }}">Add Product</a>
+</nav>
+<nav class="admin-nav">
+    <a href="{{ url_for('admin_dashboard') }}">Main Dashboard</a>
+    <a href="{{ url_for('admin_business_dashboard') }}">Business Dashboard</a>
+    <a href="{{ url_for('admin_financial_reports') }}">Financial Reports</a>
+    <a href="{{ url_for('admin_employees') }}">Employees</a>
+    <a href="{{ url_for('admin_expenses') }}">Expenses</a>
+    <a href="{{ url_for('admin_payroll') }}">Payroll</a>
+    <a href="{{ url_for('admin_orders') }}">Orders</a>
+    <a href="{{ url_for('admin_products') }}">Products</a>
+    <a href="{{ url_for('admin_stock_management') }}">Stock Management</a>
+</nav>

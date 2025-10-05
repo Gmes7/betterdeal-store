@@ -1,0 +1,262 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1 class="mb-3" style="color: var(--primary-blue);">Shopping Cart</h1>
+
+{% if cart_items %}
+<div class="grid" style="grid-template-columns: 2fr 1fr; gap: 2rem;">
+    <!-- Cart Items -->
+    <div>
+        <div class="card" style="padding: 1.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h2>Cart Items ({{ cart_items|length }})</h2>
+                <button onclick="clearCart()" class="btn btn-danger">Clear Cart</button>
+            </div>
+
+            {% for item in cart_items %}
+            <div class="cart-item" id="cart-item-{{ item.id }}" style="display: flex; gap: 1rem; padding: 1rem 0; border-bottom: 1px solid #eee; align-items: center;">
+                <img src="{{ item.image }}" alt="{{ item.name }}" style="width: 100px; height: 100px; object-fit: cover; border-radius: 4px;">
+
+                <div style="flex: 1;">
+                    <h4 style="margin-bottom: 0.5rem; color: var(--gray-dark);">{{ item.name }}</h4>
+                    <p class="text-muted" style="margin-bottom: 0.5rem;">{{ item.brand }}</p>
+                    <div style="display: flex; align-items: center; margin-bottom: 0.5rem;">
+                        <span style="color: #ffc107;">⭐</span>
+                        <span style="margin: 0 0.5rem;">{{ item.rating }}</span>
+                    </div>
+                    <div style="font-weight: bold; color: var(--primary-blue); font-size: 1.1rem;">
+                        ${{ "%.2f"|format(item.price) }}
+                    </div>
+                </div>
+
+                <div style="display: flex; flex-direction: column; align-items: end; gap: 0.5rem;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <button onclick="updateQuantity({{ item.id }}, 'decrease')"
+                                style="padding: 0.5rem; border: 1px solid #ddd; background: white; cursor: pointer; border-radius: 4px; width: 35px; height: 35px; display: flex; align-items: center; justify-content: center; font-weight: bold;">-</button>
+                        <span id="quantity-{{ item.id }}" style="padding: 0.5rem 1rem; border: 1px solid #ddd; min-width: 40px; text-align: center; font-weight: bold;">{{ item.quantity }}</span>
+                        <button onclick="updateQuantity({{ item.id }}, 'increase')"
+                                style="padding: 0.5rem; border: 1px solid #ddd; background: white; cursor: pointer; border-radius: 4px; width: 35px; height: 35px; display: flex; align-items: center; justify-content: center; font-weight: bold;">+</button>
+                    </div>
+                    <div style="font-weight: bold; font-size: 1.1rem;">
+                        $<span id="item-total-{{ item.id }}">{{ "%.2f"|format(item.item_total) }}</span>
+                    </div>
+                    <button onclick="removeFromCart({{ item.id }})" class="btn btn-danger" style="padding: 0.5rem 1rem; font-size: 0.9rem;">Remove</button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Order Summary -->
+    <div>
+        <div class="card" style="padding: 1.5rem; position: sticky; top: 2rem;">
+            <h3 style="margin-bottom: 1.5rem; color: var(--primary-blue);">Order Summary</h3>
+
+            <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
+                <span>Subtotal:</span>
+                <span>$<span id="subtotal-display">{{ "%.2f"|format(subtotal) }}</span></span>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
+                <span>Shipping:</span>
+                <span id="shipping-display">
+                    {% if shipping == 0 %}
+                        <span class="text-success">FREE</span>
+                    {% else %}
+                        ${{ "%.2f"|format(shipping) }}
+                    {% endif %}
+                </span>
+            </div>
+
+            <hr style="margin: 1rem 0; border: none; border-top: 2px solid #eee;">
+
+            <div style="display: flex; justify-content: space-between; margin-bottom: 1.5rem; font-size: 1.2rem; font-weight: bold;">
+                <span>Total:</span>
+                <span>$<span id="total-display">{{ "%.2f"|format(final_total) }}</span></span>
+            </div>
+
+            <div id="shipping-message" style="background: var(--primary-yellow); padding: 1rem; border-radius: 4px; margin-bottom: 1.5rem; text-align: center; {% if shipping == 0 %}display: none;{% endif %}">
+                <strong>Add $<span id="shipping-difference">{{ "%.2f"|format(35 - subtotal) }}</span> to get FREE shipping!</strong>
+            </div>
+
+            <button onclick="proceedToCheckout()" class="btn btn-success" style="width: 100%; padding: 1rem; font-size: 1.1rem;">
+                🛒 Proceed to Checkout
+            </button>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="card text-center" style="padding: 3rem;">
+    <div style="font-size: 4rem; margin-bottom: 1rem;">🛒</div>
+    <h2 style="margin-bottom: 1rem; color: var(--gray-dark);">Your cart is empty</h2>
+    <p class="text-muted" style="margin-bottom: 2rem;">Start shopping to add items to your cart</p>
+    <a href="{{ url_for('index') }}" class="btn btn-primary">Start Shopping</a>
+</div>
+{% endif %}
+
+<script>
+    // Store product prices for calculations
+    const productPrices = {
+        {% for item in cart_items %}
+        {{ item.id }}: {{ item.price }},
+        {% endfor %}
+    };
+
+    function updateQuantity(productId, action) {
+        const quantityElement = document.getElementById(`quantity-${productId}`);
+        let currentQuantity = parseInt(quantityElement.textContent);
+
+        if (action === 'increase') {
+            currentQuantity += 1;
+        } else if (action === 'decrease') {
+            if (currentQuantity > 1) {
+                currentQuantity -= 1;
+            } else {
+                // If quantity becomes 0, remove the item
+                removeFromCart(productId);
+                return;
+            }
+        }
+
+        // Update the quantity display immediately for better UX
+        quantityElement.textContent = currentQuantity;
+
+        // Update item total
+        const itemTotal = productPrices[productId] * currentQuantity;
+        document.getElementById(`item-total-${productId}`).textContent = itemTotal.toFixed(2);
+
+        // Send update to server
+        const formData = new FormData();
+        formData.append('product_id', productId);
+        formData.append('action', action);
+
+        fetch('/update_cart_quantity', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Update cart totals
+                updateCartTotals();
+                // Update cart badge
+                updateCartBadge(data.cart_count);
+            } else {
+                // Revert if there was an error
+                location.reload();
+            }
+        })
+        .catch(error => {
+            console.error('Error updating quantity:', error);
+            location.reload();
+        });
+    }
+
+    function updateCartTotals() {
+        let subtotal = 0;
+
+        // Calculate new subtotal from all items
+        {% for item in cart_items %}
+        const quantity{{ item.id }} = parseInt(document.getElementById(`quantity-{{ item.id }}`).textContent);
+        subtotal += {{ item.price }} * quantity{{ item.id }};
+        {% endfor %}
+
+        // Calculate shipping
+        const shipping = subtotal >= 35 ? 0 : 4.99;
+        const total = subtotal + shipping;
+
+        // Update display
+        document.getElementById('subtotal-display').textContent = subtotal.toFixed(2);
+        document.getElementById('total-display').textContent = total.toFixed(2);
+
+        // Update shipping display
+        const shippingDisplay = document.getElementById('shipping-display');
+        if (shipping === 0) {
+            shippingDisplay.innerHTML = '<span class="text-success">FREE</span>';
+        } else {
+            shippingDisplay.textContent = '$' + shipping.toFixed(2);
+        }
+
+        // Update shipping message
+        const shippingMessage = document.getElementById('shipping-message');
+        const shippingDifference = document.getElementById('shipping-difference');
+        if (subtotal < 35) {
+            shippingMessage.style.display = 'block';
+            shippingDifference.textContent = (35 - subtotal).toFixed(2);
+        } else {
+            shippingMessage.style.display = 'none';
+        }
+    }
+
+    function updateCartBadge(count) {
+        const cartBadge = document.querySelector('.cart-badge');
+        if (cartBadge) {
+            if (count > 0) {
+                cartBadge.textContent = count;
+                cartBadge.style.display = 'flex';
+            } else {
+                cartBadge.style.display = 'none';
+            }
+        }
+    }
+
+    function removeFromCart(productId) {
+        if (!confirm('Are you sure you want to remove this item from your cart?')) {
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('product_id', productId);
+
+        fetch('/remove_from_cart', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Remove item from display
+                const itemElement = document.getElementById(`cart-item-${productId}`);
+                if (itemElement) {
+                    itemElement.remove();
+                }
+
+                // Update cart badge
+                updateCartBadge(data.cart_count);
+
+                // Update totals
+                updateCartTotals();
+
+                // If cart is empty, reload page to show empty cart message
+                if (data.cart_count === 0) {
+                    setTimeout(() => location.reload(), 500);
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error removing item:', error);
+            location.reload();
+        });
+    }
+
+    function clearCart() {
+        if (!confirm('Are you sure you want to clear your entire cart?')) {
+            return;
+        }
+
+        fetch('/clear_cart', {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            }
+        });
+    }
+
+    function proceedToCheckout() {
+        window.location.href = "{{ url_for('checkout') }}";
+    }
+</script>
+{% endblock %}

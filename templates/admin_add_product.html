@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Product - BetterDeal</title>
+    <style>
+        :root {
+            --primary-blue: #0071CE;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f8f9fa;
+        }
+
+        .admin-header {
+            background: var(--primary-blue);
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .admin-nav {
+            background: white;
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .admin-nav a {
+            margin-right: 2rem;
+            text-decoration: none;
+            color: var(--primary-blue);
+            font-weight: bold;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            transition: background 0.3s;
+        }
+
+        .admin-nav a:hover, .admin-nav a.active {
+            background: #f0f7ff;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .form-container {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+            color: #333;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        input[type="url"],
+        textarea,
+        select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: var(--primary-blue);
+        }
+
+        textarea {
+            height: 100px;
+            resize: vertical;
+        }
+
+        .checkbox-group {
+            display: flex;
+            gap: 2rem;
+            margin: 1rem 0;
+        }
+
+        .checkbox-group label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: normal;
+        }
+
+        .btn {
+            padding: 0.75rem 2rem;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1rem;
+        }
+
+        .btn-primary {
+            background: var(--primary-blue);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <header class="admin-header">
+        <h1>🛒 BetterDeal Add Product</h1>
+        <div>
+            <a href="{{ url_for('admin_dashboard') }}" style="color: var(--primary-yellow); margin-right: 1rem;">Dashboard</a>
+            <a href="{{ url_for('index') }}" target="_blank" style="color: var(--primary-yellow); margin-right: 1rem;">View Store</a>
+            <a href="{{ url_for('admin_logout') }}" style="color: white;">Logout</a>
+        </div>
+    </header>
+
+    <nav class="admin-nav">
+        <a href="{{ url_for('admin_dashboard') }}">Dashboard</a>
+        <a href="{{ url_for('admin_products') }}">Products</a>
+        <a href="{{ url_for('admin_stock_management') }}">Stock Management</a>
+        <a href="{{ url_for('admin_add_product') }}" class="active">Add Product</a>
+    </nav>
+
+    <div class="container">
+        <h2>Add New Product</h2>
+
+        <div class="form-container">
+            <form method="POST">
+                <div class="form-group">
+                    <label for="name">Product Name *</label>
+                    <input type="text" id="name" name="name" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="brand">Brand *</label>
+                    <input type="text" id="brand" name="brand" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="category">Category *</label>
+                    <select id="category" name="category" required>
+                        <option value="">Select Category</option>
+                        <option value="Electronics">Electronics</option>
+                        <option value="Clothing">Clothing</option>
+                        <option value="Home & Garden">Home & Garden</option>
+                        <option value="Sports">Sports</option>
+                        <option value="Beauty">Beauty</option>
+                        <option value="Grocery">Grocery</option>
+                    </select>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label for="price">Current Price ($) *</label>
+                        <input type="number" id="price" name="price" step="0.01" min="0" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="original_price">Original Price ($) *</label>
+                        <input type="number" id="original_price" name="original_price" step="0.01" min="0" required>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label for="discount">Discount (%)</label>
+                        <input type="number" id="discount" name="discount" min="0" max="100" value="0">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="rating">Rating (0-5)</label>
+                        <input type="number" id="rating" name="rating" min="0" max="5" step="0.1" value="4.0">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="reviews">Number of Reviews</label>
+                        <input type="number" id="reviews" name="reviews" min="0" value="0">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="stock">Stock Quantity *</label>
+                    <input type="number" id="stock" name="stock" min="0" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="image">Product Image URL *</label>
+                    <input type="url" id="image" name="image" placeholder="https://example.com/image.jpg" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="description">Product Description *</label>
+                    <textarea id="description" name="description" required></textarea>
+                </div>
+
+                <div class="checkbox-group">
+                    <label>
+                        <input type="checkbox" name="featured" value="true">
+                        Featured Product
+                    </label>
+                    <label>
+                        <input type="checkbox" name="active" value="true" checked>
+                        Active Product
+                    </label>
+                </div>
+
+                <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                    <button type="submit" class="btn btn-primary">Add Product</button>
+                    <a href="{{ url_for('admin_products') }}" class="btn btn-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</body>
+</html>
+
+<nav class="admin-nav">
+    <a href="{{ url_for('admin_dashboard') }}">Dashboard</a>
+    <a href="{{ url_for('admin_products') }}">Products</a>
+    <a href="{{ url_for('admin_stock_management') }}">Stock Management</a>
+    <a href="{{ url_for('admin_orders') }}">Order Management</a>
+    <a href="{{ url_for('admin_add_product') }}">Add Product</a>
+</nav>
+<nav class="admin-nav">
+    <a href="{{ url_for('admin_dashboard') }}">Main Dashboard</a>
+    <a href="{{ url_for('admin_business_dashboard') }}">Business Dashboard</a>
+    <a href="{{ url_for('admin_financial_reports') }}">Financial Reports</a>
+    <a href="{{ url_for('admin_employees') }}">Employees</a>
+    <a href="{{ url_for('admin_expenses') }}">Expenses</a>
+    <a href="{{ url_for('admin_payroll') }}">Payroll</a>
+    <a href="{{ url_for('admin_orders') }}">Orders</a>
+    <a href="{{ url_for('admin_products') }}">Products</a>
+    <a href="{{ url_for('admin_stock_management') }}">Stock Management</a>
+</nav>

@@ -1,0 +1,537 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="product-container">
+    <!-- Product Images -->
+    <div class="product-image-section">
+        <div class="card">
+            <img src="{{ product.image }}" alt="{{ product.name }}" class="product-image">
+        </div>
+
+        <div class="card product-info-cards">
+            <div class="info-grid">
+                <div class="info-item">
+                    <div class="info-icon">⭐</div>
+                    <div class="info-value">{{ product.rating }}/5</div>
+                    <div class="info-label">{{ product.reviews }} reviews</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-icon">📦</div>
+                    <div class="info-value">{{ product.stock }}</div>
+                    <div class="info-label">In stock</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Product Details -->
+    <div class="product-details-section">
+        <div class="category-badge">
+            {{ product.category }}
+        </div>
+
+        <h1 class="product-title">{{ product.name }}</h1>
+        <p class="product-brand">by {{ product.brand }}</p>
+
+        <!-- Stock Status -->
+        <div class="stock-status">
+            {% if product.stock > 10 %}
+            <span class="text-success stock-item">
+                <span class="stock-icon">✓</span> In Stock - Ready to ship
+            </span>
+            {% elif product.stock > 0 %}
+            <span class="text-warning stock-item">
+                <span class="stock-icon">⚠</span> Only {{ product.stock }} left!
+            </span>
+            {% else %}
+            <span class="text-danger stock-item">
+                <span class="stock-icon">✗</span> Out of Stock
+            </span>
+            {% endif %}
+        </div>
+
+        <!-- Pricing -->
+        <div class="pricing-section">
+            <div class="price-row">
+                <span class="current-price">${{ "%.2f"|format(product.price) }}</span>
+                {% if product.original_price > product.price %}
+                <span class="original-price">${{ "%.2f"|format(product.original_price) }}</span>
+                <span class="discount-badge">
+                    Save {{ product.discount }}%
+                </span>
+                {% endif %}
+            </div>
+            {% if product.original_price > product.price %}
+            <div class="savings-text">
+                You save: ${{ "%.2f"|format(product.original_price - product.price) }}
+            </div>
+            {% endif %}
+
+            <!-- Total Amount Display -->
+            <div class="total-amount">
+                Total: $<span id="total-amount">{{ "%.2f"|format(product.price) }}</span>
+            </div>
+        </div>
+
+        <!-- Quantity Selector -->
+        <div class="quantity-section">
+            <label class="quantity-label">Quantity:</label>
+            <div class="quantity-controls">
+                <button type="button" onclick="updateQuantity(-1)" class="quantity-btn">-</button>
+                <span id="quantity" class="quantity-display">1</span>
+                <button type="button" onclick="updateQuantity(1)" class="quantity-btn">+</button>
+            </div>
+            <div class="quantity-hint">
+                Maximum: {{ product.stock }} units
+            </div>
+        </div>
+
+        <!-- Add to Cart -->
+        <div class="cart-section">
+            <button onclick="addToCart()" class="btn btn-primary add-to-cart-btn" {% if product.stock == 0 %}disabled{% endif %}>
+                {% if product.stock == 0 %}
+                    ❌ Out of Stock
+                {% else %}
+                    🛒 Add to Cart
+                {% endif %}
+            </button>
+        </div>
+
+        <!-- Quick Features -->
+        <div class="card quick-info">
+            <h4>Quick Info</h4>
+            <div class="info-list">
+                <div class="info-row">
+                    <span>Brand:</span>
+                    <span class="info-value-bold">{{ product.brand }}</span>
+                </div>
+                <div class="info-row">
+                    <span>Category:</span>
+                    <span class="info-value-bold">{{ product.category }}</span>
+                </div>
+                <div class="info-row">
+                    <span>Availability:</span>
+                    <span class="info-value-bold availability-{% if product.stock > 0 %}in-stock{% else %}out-of-stock{% endif %}">
+                        {% if product.stock > 0 %}In Stock{% else %}Out of Stock{% endif %}
+                    </span>
+                </div>
+                {% if product.discount > 0 %}
+                <div class="info-row">
+                    <span>Discount:</span>
+                    <span class="info-value-bold discount-text">{{ product.discount }}% OFF</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Product Description -->
+        <div class="card description-section">
+            <h3>Product Description</h3>
+            <p class="description-text">{{ product.description }}</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    let quantity = 1;
+    const maxStock = {{ product.stock }};
+    const productPrice = {{ product.price }};
+
+    function updateQuantity(change) {
+        const newQuantity = quantity + change;
+
+        if (newQuantity >= 1 && newQuantity <= maxStock) {
+            quantity = newQuantity;
+            document.getElementById('quantity').textContent = quantity;
+
+            // Update total amount
+            const totalAmount = productPrice * quantity;
+            document.getElementById('total-amount').textContent = totalAmount.toFixed(2);
+
+            // Add animation feedback
+            const quantityElement = document.getElementById('quantity');
+            quantityElement.classList.add('quantity-updated');
+            setTimeout(() => {
+                quantityElement.classList.remove('quantity-updated');
+            }, 300);
+        } else if (newQuantity > maxStock) {
+            alert(`Sorry, only ${maxStock} units available in stock.`);
+        }
+    }
+
+    function addToCart() {
+        if (maxStock === 0) {
+            alert('This product is currently out of stock.');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('product_id', '{{ product.id }}');
+        formData.append('quantity', quantity);
+
+        // Show loading state
+        const button = event.target;
+        const originalText = button.innerHTML;
+        button.innerHTML = '⏳ Adding...';
+        button.disabled = true;
+
+        fetch('/add_to_cart', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Success animation
+                button.innerHTML = '✅ Added!';
+                button.classList.add('added-to-cart');
+
+                // Update cart badge if exists
+                const cartBadge = document.querySelector('.cart-badge');
+                if (cartBadge) {
+                    cartBadge.textContent = data.cart_count;
+                    cartBadge.style.display = 'flex';
+                }
+
+                // Reset button after 2 seconds
+                setTimeout(() => {
+                    button.innerHTML = originalText;
+                    button.classList.remove('added-to-cart');
+                    button.disabled = false;
+                }, 2000);
+            } else {
+                alert('Failed to add product to cart. Please try again.');
+                button.innerHTML = originalText;
+                button.disabled = false;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error adding product to cart. Please try again.');
+            button.innerHTML = originalText;
+            button.disabled = false;
+        });
+    }
+
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        if (maxStock === 0) {
+            const button = document.querySelector('.add-to-cart-btn');
+            button.disabled = true;
+            button.innerHTML = '❌ Out of Stock';
+        }
+
+        // Add touch event listeners for better mobile support
+        document.querySelectorAll('.quantity-btn').forEach(btn => {
+            btn.addEventListener('touchstart', function(e) {
+                e.preventDefault();
+                this.click();
+            });
+        });
+    });
+</script>
+
+<style>
+    /* Mobile-first responsive styles */
+    .product-container {
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+        padding: 1rem;
+    }
+
+    .product-image {
+        width: 100%;
+        height: 300px;
+        object-fit: cover;
+        border-radius: 8px;
+    }
+
+    .info-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+        text-align: center;
+    }
+
+    .info-item {
+        padding: 0.5rem;
+    }
+
+    .info-icon {
+        font-size: 1.5rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .info-value {
+        font-weight: bold;
+        font-size: 1.1rem;
+    }
+
+    .info-label {
+        font-size: 0.8rem;
+        color: #666;
+    }
+
+    .category-badge {
+        background: var(--primary-blue);
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        display: inline-block;
+        margin-bottom: 1rem;
+    }
+
+    .product-title {
+        font-size: 1.8rem;
+        margin-bottom: 0.5rem;
+        color: var(--gray-dark);
+        line-height: 1.2;
+    }
+
+    .product-brand {
+        font-size: 1.1rem;
+        margin-bottom: 1rem;
+        color: #666;
+    }
+
+    .stock-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 1.5rem;
+        font-size: 1rem;
+    }
+
+    .stock-icon {
+        font-size: 1.2rem;
+    }
+
+    .price-row {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .current-price {
+        font-size: 2rem;
+        font-weight: bold;
+        color: var(--primary-blue);
+    }
+
+    .original-price {
+        text-decoration: line-through;
+        font-size: 1.5rem;
+        color: var(--danger);
+    }
+
+    .discount-badge {
+        background: var(--danger);
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-weight: bold;
+        font-size: 0.9rem;
+    }
+
+    .savings-text {
+        color: #666;
+        font-size: 0.9rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .total-amount {
+        font-size: 1.3rem;
+        font-weight: bold;
+        color: var(--primary-blue);
+        margin: 1rem 0;
+    }
+
+    .quantity-section {
+        margin-bottom: 2rem;
+    }
+
+    .quantity-label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: bold;
+        font-size: 1.1rem;
+    }
+
+    .quantity-controls {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        width: fit-content;
+    }
+
+    .quantity-btn {
+        padding: 1rem;
+        border: 1px solid #ddd;
+        background: white;
+        cursor: pointer;
+        border-radius: 8px;
+        font-size: 1.2rem;
+        width: 60px;
+        height: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .quantity-display {
+        padding: 1rem 1.5rem;
+        border: 1px solid #ddd;
+        min-width: 80px;
+        text-align: center;
+        font-size: 1.2rem;
+        font-weight: bold;
+        height: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: transform 0.3s ease;
+    }
+
+    .quantity-updated {
+        transform: scale(1.1);
+        background-color: #e3f2fd;
+    }
+
+    .quantity-hint {
+        color: #666;
+        font-size: 0.9rem;
+        margin-top: 0.5rem;
+    }
+
+    .cart-section {
+        margin-bottom: 2rem;
+    }
+
+    .add-to-cart-btn {
+        width: 100%;
+        padding: 1.2rem;
+        font-size: 1.2rem;
+        border-radius: 8px;
+        touch-action: manipulation;
+    }
+
+    .added-to-cart {
+        background-color: var(--success) !important;
+    }
+
+    .quick-info, .description-section {
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .info-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.8rem;
+    }
+
+    .info-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+    .info-value-bold {
+        font-weight: bold;
+    }
+
+    .availability-in-stock {
+        color: var(--success);
+    }
+
+    .availability-out-of-stock {
+        color: var(--danger);
+    }
+
+    .discount-text {
+        color: var(--danger);
+        font-weight: bold;
+    }
+
+    .description-text {
+        line-height: 1.6;
+        color: #555;
+        font-size: 1rem;
+    }
+
+    /* Tablet and desktop styles */
+    @media (min-width: 768px) {
+        .product-container {
+            flex-direction: row;
+            gap: 3rem;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .product-image-section {
+            flex: 1;
+        }
+
+        .product-details-section {
+            flex: 1;
+        }
+
+        .product-image {
+            height: 400px;
+        }
+
+        .product-title {
+            font-size: 2.2rem;
+        }
+
+        .quantity-btn, .quantity-display {
+            width: 50px;
+            height: 50px;
+        }
+
+        .add-to-cart-btn {
+            font-size: 1.1rem;
+            padding: 1rem;
+        }
+    }
+
+    /* Large desktop */
+    @media (min-width: 1024px) {
+        .product-container {
+            gap: 4rem;
+        }
+
+        .product-image {
+            height: 500px;
+        }
+    }
+
+    /* Button hover effects for desktop */
+    @media (hover: hover) {
+        .quantity-btn:hover {
+            background-color: #f5f5f5;
+        }
+
+        .add-to-cart-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+    }
+
+    /* Disabled button styles */
+    .btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none !important;
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payroll Management - BetterDeal</title>
+    <style>
+        :root {
+            --primary-blue: #0071CE;
+            --success: #28a745;
+            --danger: #dc3545;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f8f9fa;
+        }
+
+        .admin-header {
+            background: var(--primary-blue);
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .admin-nav {
+            background: white;
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .admin-nav a {
+            margin-right: 2rem;
+            text-decoration: none;
+            color: var(--primary-blue);
+            font-weight: bold;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            transition: background 0.3s;
+        }
+
+        .admin-nav a:hover, .admin-nav a.active {
+            background: #f0f7ff;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .payroll-table {
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        th {
+            background: #f8f9fa;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            text-decoration: none;
+            display: inline-block;
+            margin: 0.25rem;
+        }
+
+        .btn-primary { background: var(--primary-blue); color: white; }
+        .btn-success { background: var(--success); color: white; }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .stats-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 1rem;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+        }
+
+        .total-payroll { color: var(--danger); }
+        .active-employees { color: var(--success); }
+        .average-salary { color: var(--primary-blue); }
+
+        .payment-status {
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        .status-paid { background: #d4edda; color: #155724; }
+        .status-pending { background: #fff3cd; color: #856404; }
+        .status-overdue { background: #f8d7da; color: #721c24; }
+
+        .payroll-summary {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .summary-total {
+            font-weight: bold;
+            font-size: 1.2rem;
+            border-bottom: none;
+            border-top: 2px solid #eee;
+            padding-top: 1rem;
+            margin-top: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <header class="admin-header">
+        <h1>💰 Payroll Management - BetterDeal</h1>
+        <div>
+            <a href="{{ url_for('admin_business_dashboard') }}" style="color: var(--primary-yellow); margin-right: 1rem;">Business Dashboard</a>
+            <a href="{{ url_for('index') }}" target="_blank" style="color: var(--primary-yellow); margin-right: 1rem;">View Store</a>
+            <a href="{{ url_for('admin_logout') }}" style="color: white;">Logout</a>
+        </div>
+    </header>
+
+    <nav class="admin-nav">
+        <a href="{{ url_for('admin_dashboard') }}">Main Dashboard</a>
+        <a href="{{ url_for('admin_business_dashboard') }}">Business Dashboard</a>
+        <a href="{{ url_for('admin_financial_reports') }}">Financial Reports</a>
+        <a href="{{ url_for('admin_employees') }}">Employees</a>
+        <a href="{{ url_for('admin_expenses') }}">Expenses</a>
+        <a href="{{ url_for('admin_payroll') }}" class="active">Payroll</a>
+    </nav>
+
+    <div class="container">
+        <div class="page-header">
+            <h2>Payroll Management</h2>
+            <a href="#" class="btn btn-success" onclick="processPayroll()">Process Payroll</a>
+        </div>
+
+        <!-- Payroll Statistics -->
+        <div class="stats-card">
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-number total-payroll">
+                        ${{ "%.2f"|format(employees|sum(attribute='salary')) }}
+                    </div>
+                    <div class="stat-label">Monthly Payroll</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number active-employees">
+                        {{ employees|selectattr('status', 'equalto', 'active')|list|length }}
+                    </div>
+                    <div class="stat-label">Active Employees</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number average-salary">
+                        ${{ "%.2f"|format((employees|sum(attribute='salary') / (employees|selectattr('status', 'equalto', 'active')|list|length)) if (employees|selectattr('status', 'equalto', 'active')|list|length) else 0) }}
+                    </div>
+                    <div class="stat-label">Average Salary</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" style="color: #6f42c1;">
+                        {{ employees|length }}
+                    </div>
+                    <div class="stat-label">Total Employees</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payroll Summary -->
+        <div class="payroll-summary">
+            <h3>Monthly Payroll Summary</h3>
+            {% for employee in employees %}
+                {% if employee.status == 'active' %}
+                <div class="summary-item">
+                    <span>{{ employee.name }} ({{ employee.position }})</span>
+                    <span style="color: var(--danger);">-${{ "%.2f"|format(employee.salary) }}</span>
+                </div>
+                {% endif %}
+            {% endfor %}
+            <div class="summary-item summary-total">
+                <span>Total Monthly Payroll</span>
+                <span style="color: var(--danger);">-${{ "%.2f"|format(employees|sum(attribute='salary')) }}</span>
+            </div>
+        </div>
+
+        <div class="payroll-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Employee</th>
+                        <th>Position</th>
+                        <th>Monthly Salary</th>
+                        <th>Status</th>
+                        <th>Last Payment</th>
+                        <th>Payment Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for employee in employees %}
+                    <tr>
+                        <td>
+                            <strong>{{ employee.name }}</strong>
+                            <br><small>{{ employee.email }}</small>
+                        </td>
+                        <td>{{ employee.position }}</td>
+                        <td style="color: var(--danger); font-weight: bold;">
+                            ${{ "%.2f"|format(employee.salary) }}
+                        </td>
+                        <td>
+                            {% if employee.status == 'active' %}
+                                <span style="color: var(--success); font-weight: bold;">ACTIVE</span>
+                            {% else %}
+                                <span style="color: var(--danger); font-weight: bold;">INACTIVE</span>
+                            {% endif %}
+                        </td>
+                        <td>{% if employee.status == 'active' %}2024-03-01{% else %}--{% endif %}</td>
+                        <td>
+                            {% if employee.status == 'active' %}
+                                <span class="payment-status status-paid">PAID</span>
+                            {% else %}
+                                <span class="payment-status status-pending">N/A</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if employee.status == 'active' %}
+                                <a href="#" class="btn btn-primary" onclick="payEmployee({{ employee.id }})">Pay Now</a>
+                            {% else %}
+                                <span style="color: #666;">--</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Payroll Notes -->
+        <div style="background: #e3f2fd; padding: 1.5rem; border-radius: 8px; margin-top: 2rem;">
+            <h4 style="color: #1565c0; margin-bottom: 1rem;">Payroll Information</h4>
+            <ul style="color: #1565c0; line-height: 1.6;">
+                <li>Payroll is processed on the 1st of each month</li>
+                <li>Only active employees are included in payroll calculations</li>
+                <li>Salary amounts are monthly gross salaries</li>
+                <li>Use "Pay Now" for individual payments or "Process Payroll" for bulk payments</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        function processPayroll() {
+            if (confirm('Are you sure you want to process payroll for all active employees?')) {
+                // In a real application, you would make an API call here
+                alert('Payroll processed successfully! (this would call an API in production)');
+                // For now, reload the page
+                location.reload();
+            }
+        }
+
+        function payEmployee(employeeId) {
+            if (confirm('Process payment for this employee?')) {
+                // In a real application, you would make an API call here
+                alert('Payment processed! (this would call an API in production)');
+                // For now, reload the page
+                location.reload();
+            }
+        }
+    </script>
+</body>
+</html>
+
+<nav class="admin-nav">
+    <a href="{{ url_for('admin_dashboard') }}">Dashboard</a>
+    <a href="{{ url_for('admin_products') }}">Products</a>
+    <a href="{{ url_for('admin_stock_management') }}">Stock Management</a>
+    <a href="{{ url_for('admin_orders') }}">Order Management</a>
+    <a href="{{ url_for('admin_add_product') }}">Add Product</a>
+</nav>
+<nav class="admin-nav">
+    <a href="{{ url_for('admin_dashboard') }}">Main Dashboard</a>
+    <a href="{{ url_for('admin_business_dashboard') }}">Business Dashboard</a>
+    <a href="{{ url_for('admin_financial_reports') }}">Financial Reports</a>
+    <a href="{{ url_for('admin_employees') }}">Employees</a>
+    <a href="{{ url_for('admin_expenses') }}">Expenses</a>
+    <a href="{{ url_for('admin_payroll') }}">Payroll</a>
+    <a href="{{ url_for('admin_orders') }}">Orders</a>
+    <a href="{{ url_for('admin_products') }}">Products</a>
+    <a href="{{ url_for('admin_stock_management') }}">Stock Management</a>
+</nav>

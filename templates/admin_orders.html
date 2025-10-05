@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Management - BetterDeal</title>
+    <style>
+        :root {
+            --primary-blue: #0071CE;
+            --success: #28a745;
+            --warning: #ffc107;
+            --danger: #dc3545;
+            --info: #17a2b8;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f8f9fa;
+        }
+
+        .admin-header {
+            background: var(--primary-blue);
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .admin-nav {
+            background: white;
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .admin-nav a {
+            margin-right: 2rem;
+            text-decoration: none;
+            color: var(--primary-blue);
+            font-weight: bold;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            transition: background 0.3s;
+        }
+
+        .admin-nav a:hover, .admin-nav a.active {
+            background: #f0f7ff;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .orders-table {
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        th {
+            background: #f8f9fa;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .status-pending { background: #fff3cd; color: #856404; }
+        .status-confirmed { background: #d1ecf1; color: #0c5460; }
+        .status-shipped { background: #cce7ff; color: #004085; }
+        .status-delivered { background: #d4edda; color: #155724; }
+        .status-cancelled { background: #f8d7da; color: #721c24; }
+
+        .status-badge {
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 0.8rem;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            text-decoration: none;
+            display: inline-block;
+            margin: 0.25rem;
+            font-size: 0.8rem;
+        }
+
+        .btn-primary { background: var(--primary-blue); color: white; }
+        .btn-success { background: var(--success); color: white; }
+        .btn-info { background: var(--info); color: white; }
+        .btn-warning { background: var(--warning); color: black; }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <header class="admin-header">
+        <h1>🛒 BetterDeal Order Management</h1>
+        <div>
+            <a href="{{ url_for('admin_dashboard') }}" style="color: var(--primary-yellow); margin-right: 1rem;">Dashboard</a>
+            <a href="{{ url_for('index') }}" target="_blank" style="color: var(--primary-yellow); margin-right: 1rem;">View Store</a>
+            <a href="{{ url_for('admin_logout') }}" style="color: white;">Logout</a>
+        </div>
+    </header>
+
+    <nav class="admin-nav">
+        <a href="{{ url_for('admin_dashboard') }}">Dashboard</a>
+        <a href="{{ url_for('admin_products') }}">Products</a>
+        <a href="{{ url_for('admin_stock_management') }}">Stock Management</a>
+        <a href="{{ url_for('admin_orders') }}" class="active">Order Management</a>
+        <a href="{{ url_for('admin_add_product') }}">Add Product</a>
+    </nav>
+
+    <div class="container">
+        <h2>Order Management</h2>
+
+        <!-- Order Statistics -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number" style="color: var(--warning);">{{ orders|length }}</div>
+                <h3>Total Orders</h3>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" style="color: var(--info);">{{ orders|selectattr('status', 'equalto', 'pending')|list|length }}</div>
+                <h3>Pending</h3>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" style="color: var(--primary-blue);">{{ orders|selectattr('status', 'equalto', 'confirmed')|list|length }}</div>
+                <h3>Confirmed</h3>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" style="color: var(--success);">{{ orders|selectattr('status', 'equalto', 'delivered')|list|length }}</div>
+                <h3>Delivered</h3>
+            </div>
+        </div>
+
+        <div class="orders-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Order ID</th>
+                        <th>Customer</th>
+                        <th>Date</th>
+                        <th>Items</th>
+                        <th>Total</th>
+                        <th>Payment</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for order in orders|reverse %}
+                    <tr>
+                        <td><strong>#{{ order.id }}</strong></td>
+                        <td>
+                            <strong>{{ order.customer_name }}</strong><br>
+                            <small>{{ order.customer_email }}</small><br>
+                            <small>{{ order.customer_phone }}</small>
+                        </td>
+                        <td>{{ order.order_date }}</td>
+                        <td>{{ order.items|length }} items</td>
+                        <td>${{ "%.2f"|format(order.total_amount) }}</td>
+                        <td>{{ order.payment_method|upper }}</td>
+                        <td>
+                            <span class="status-badge status-{{ order.status }}">
+                                {{ order.status|upper }}
+                            </span>
+                        </td>
+                        <td>
+                            <a href="{{ url_for('admin_order_detail', order_id=order.id) }}" class="btn btn-primary">View</a>
+                            <select onchange="updateOrderStatus({{ order.id }}, this.value)" style="padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
+                                <option value="pending" {% if order.status == 'pending' %}selected{% endif %}>Pending</option>
+                                <option value="confirmed" {% if order.status == 'confirmed' %}selected{% endif %}>Confirmed</option>
+                                <option value="shipped" {% if order.status == 'shipped' %}selected{% endif %}>Shipped</option>
+                                <option value="delivered" {% if order.status == 'delivered' %}selected{% endif %}>Delivered</option>
+                                <option value="cancelled" {% if order.status == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                            </select>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="8" style="text-align: center; padding: 2rem;">
+                            <div style="font-size: 4rem; margin-bottom: 1rem;">📦</div>
+                            <h3>No Orders Yet</h3>
+                            <p>Orders will appear here when customers place them.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        function updateOrderStatus(orderId, newStatus) {
+            const formData = new FormData();
+            formData.append('order_id', orderId);
+            formData.append('status', newStatus);
+
+            fetch('/admin/orders/update_status', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Order status updated successfully!');
+                    location.reload();
+                } else {
+                    alert('Error updating order status: ' + data.message);
+                }
+            })
+            .catch(error => {
+                alert('Error updating order status. Please try again.');
+                console.error('Error:', error);
+            });
+        }
+
+        // Check for new orders every 30 seconds
+        setInterval(() => {
+            location.reload();
+        }, 30000);
+    </script>
+</body>
+</html>
+<nav class="admin-nav">
+    <a href="{{ url_for('admin_dashboard') }}">Main Dashboard</a>
+    <a href="{{ url_for('admin_business_dashboard') }}">Business Dashboard</a>
+    <a href="{{ url_for('admin_financial_reports') }}">Financial Reports</a>
+    <a href="{{ url_for('admin_employees') }}">Employees</a>
+    <a href="{{ url_for('admin_expenses') }}">Expenses</a>
+    <a href="{{ url_for('admin_payroll') }}">Payroll</a>
+    <a href="{{ url_for('admin_orders') }}">Orders</a>
+    <a href="{{ url_for('admin_products') }}">Products</a>
+    <a href="{{ url_for('admin_stock_management') }}">Stock Management</a>
+</nav>

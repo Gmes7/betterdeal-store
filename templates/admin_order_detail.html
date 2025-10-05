@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order #{{ order.id }} - BetterDeal</title>
+    <style>
+        :root {
+            --primary-blue: #0071CE;
+            --success: #28a745;
+            --warning: #ffc107;
+            --danger: #dc3545;
+            --info: #17a2b8;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f8f9fa;
+        }
+
+        .admin-header {
+            background: var(--primary-blue);
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .admin-nav {
+            background: white;
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .admin-nav a {
+            margin-right: 2rem;
+            text-decoration: none;
+            color: var(--primary-blue);
+            font-weight: bold;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            transition: background 0.3s;
+        }
+
+        .admin-nav a:hover, .admin-nav a.active {
+            background: #f0f7ff;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .order-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+
+        .order-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #eee;
+        }
+
+        .status-badge {
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 1rem;
+        }
+
+        .status-pending { background: #fff3cd; color: #856404; }
+        .status-confirmed { background: #d1ecf1; color: #0c5460; }
+        .status-shipped { background: #cce7ff; color: #004085; }
+        .status-delivered { background: #d4edda; color: #155724; }
+        .status-cancelled { background: #f8d7da; color: #721c24; }
+
+        .order-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+
+        .order-section {
+            margin-bottom: 2rem;
+        }
+
+        .order-section h3 {
+            color: var(--primary-blue);
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid #eee;
+        }
+
+        .order-items {
+            width: 100%;
+        }
+
+        .order-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 1rem 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary { background: var(--primary-blue); color: white; }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+            padding: 0.5rem 0;
+        }
+
+        .info-label {
+            font-weight: bold;
+            color: #666;
+        }
+
+        .total-row {
+            border-top: 2px solid #eee;
+            padding-top: 1rem;
+            margin-top: 1rem;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+    </style>
+</head>
+<body>
+    <header class="admin-header">
+        <h1>🛒 BetterDeal Order Details</h1>
+        <div>
+            <a href="{{ url_for('admin_dashboard') }}" style="color: var(--primary-yellow); margin-right: 1rem;">Dashboard</a>
+            <a href="{{ url_for('index') }}" target="_blank" style="color: var(--primary-yellow); margin-right: 1rem;">View Store</a>
+            <a href="{{ url_for('admin_logout') }}" style="color: white;">Logout</a>
+        </div>
+    </header>
+
+    <nav class="admin-nav">
+        <a href="{{ url_for('admin_dashboard') }}">Dashboard</a>
+        <a href="{{ url_for('admin_products') }}">Products</a>
+        <a href="{{ url_for('admin_stock_management') }}">Stock Management</a>
+        <a href="{{ url_for('admin_orders') }}">Order Management</a>
+        <a href="{{ url_for('admin_add_product') }}">Add Product</a>
+    </nav>
+
+    <div class="container">
+        <a href="{{ url_for('admin_orders') }}" class="btn btn-primary" style="margin-bottom: 2rem;">← Back to Orders</a>
+
+        <div class="order-card">
+            <div class="order-header">
+                <div>
+                    <h1>Order #{{ order.id }}</h1>
+                    <p>Placed on {{ order.order_date }}</p>
+                </div>
+                <div>
+                    <span class="status-badge status-{{ order.status }}">
+                        {{ order.status|upper }}
+                    </span>
+                </div>
+            </div>
+
+            <div class="order-grid">
+                <!-- Customer Information -->
+                <div class="order-section">
+                    <h3>Customer Information</h3>
+                    <div class="info-row">
+                        <span class="info-label">Name:</span>
+                        <span>{{ order.customer_name }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Email:</span>
+                        <span>{{ order.customer_email }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Phone:</span>
+                        <span>{{ order.customer_phone }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Payment Method:</span>
+                        <span>{{ order.payment_method|upper }}</span>
+                    </div>
+                </div>
+
+                <!-- Delivery Information -->
+                <div class="order-section">
+                    <h3>Delivery Information</h3>
+                    <div style="background: #f8f9fa; padding: 1rem; border-radius: 4px;">
+                        {{ order.delivery_address|replace('\n', '<br>')|safe }}
+                    </div>
+                    {% if order.delivery_date %}
+                    <div class="info-row">
+                        <span class="info-label">Delivered on:</span>
+                        <span>{{ order.delivery_date }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Order Items -->
+            <div class="order-section">
+                <h3>Order Items</h3>
+                <div class="order-items">
+                    {% for item in order.items %}
+                    <div class="order-item">
+                        <div>
+                            <strong>{{ item.name }}</strong><br>
+                            <small>${{ item.price }} x {{ item.quantity }}</small>
+                        </div>
+                        <div style="font-weight: bold;">
+                            ${{ "%.2f"|format(item.total) }}
+                        </div>
+                    </div>
+                    {% endfor %}
+
+                    <!-- Order Totals -->
+                    <div class="order-item">
+                        <div>Subtotal:</div>
+                        <div>${{ "%.2f"|format(order.subtotal) }}</div>
+                    </div>
+                    <div class="order-item">
+                        <div>Shipping:</div>
+                        <div>
+                            {% if order.shipping == 0 %}
+                                FREE
+                            {% else %}
+                                ${{ "%.2f"|format(order.shipping) }}
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="order-item total-row">
+                        <div>Total Amount:</div>
+                        <div>${{ "%.2f"|format(order.total_amount) }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Status Update -->
+            <div class="order-section">
+                <h3>Update Order Status</h3>
+                <select onchange="updateOrderStatus({{ order.id }}, this.value)" style="padding: 0.75rem; border: 2px solid #ddd; border-radius: 4px; font-size: 1rem;">
+                    <option value="pending" {% if order.status == 'pending' %}selected{% endif %}>Pending</option>
+                    <option value="confirmed" {% if order.status == 'confirmed' %}selected{% endif %}>Confirmed</option>
+                    <option value="shipped" {% if order.status == 'shipped' %}selected{% endif %}>Shipped</option>
+                    <option value="delivered" {% if order.status == 'delivered' %}selected{% endif %}>Delivered</option>
+                    <option value="cancelled" {% if order.status == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function updateOrderStatus(orderId, newStatus) {
+            const formData = new FormData();
+            formData.append('order_id', orderId);
+            formData.append('status', newStatus);
+
+            fetch('/admin/orders/update_status', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Order status updated successfully!');
+                    location.reload();
+                } else {
+                    alert('Error updating order status: ' + data.message);
+                }
+            })
+            .catch(error => {
+                alert('Error updating order status. Please try again.');
+                console.error('Error:', error);
+            });
+        }
+    </script>
+</body>
+</html>
+
+<nav class="admin-nav">
+    <a href="{{ url_for('admin_dashboard') }}">Dashboard</a>
+    <a href="{{ url_for('admin_products') }}">Products</a>
+    <a href="{{ url_for('admin_stock_management') }}">Stock Management</a>
+    <a href="{{ url_for('admin_orders') }}">Order Management</a>
+    <a href="{{ url_for('admin_add_product') }}">Add Product</a>
+</nav>
+<nav class="admin-nav">
+    <a href="{{ url_for('admin_dashboard') }}">Main Dashboard</a>
+    <a href="{{ url_for('admin_business_dashboard') }}">Business Dashboard</a>
+    <a href="{{ url_for('admin_financial_reports') }}">Financial Reports</a>
+    <a href="{{ url_for('admin_employees') }}">Employees</a>
+    <a href="{{ url_for('admin_expenses') }}">Expenses</a>
+    <a href="{{ url_for('admin_payroll') }}">Payroll</a>
+    <a href="{{ url_for('admin_orders') }}">Orders</a>
+    <a href="{{ url_for('admin_products') }}">Products</a>
+    <a href="{{ url_for('admin_stock_management') }}">Stock Management</a>
+</nav>

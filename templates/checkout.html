@@ -1,0 +1,376 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1 class="mb-3" style="color: var(--primary-blue);">Checkout</h1>
+
+<div class="grid" style="grid-template-columns: 1fr 1fr; gap: 3rem;">
+    <!-- Customer Information & Payment -->
+    <div>
+        <div class="card" style="padding: 1.5rem;">
+            <h2 style="margin-bottom: 1.5rem; color: var(--primary-blue);">Customer Information</h2>
+
+            <form id="checkout-form">
+                <div style="display: grid; gap: 1rem; margin-bottom: 2rem;">
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Full Name *</label>
+                        <input type="text" name="customer_name" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+                    </div>
+
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Email *</label>
+                        <input type="email" name="customer_email" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+                    </div>
+
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Phone Number *</label>
+                        <input type="tel" name="customer_phone" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+                    </div>
+
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Delivery Address *</label>
+                        <textarea name="delivery_address" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; min-height: 80px;" placeholder="Enter your complete delivery address..."></textarea>
+                    </div>
+                </div>
+
+                <h3 style="margin-bottom: 1rem; color: var(--primary-blue);">Payment Method</h3>
+
+                <div style="margin-bottom: 1.5rem;">
+                    <div class="payment-option" style="display: flex; align-items: center; padding: 1rem; border: 2px solid #ddd; border-radius: 8px; margin-bottom: 1rem; cursor: pointer;"
+                         onclick="selectPayment('cod')">
+                        <input type="radio" name="payment_method" value="cod" style="margin-right: 1rem;" required checked>
+                        <div>
+                            <strong>💵 Cash on Delivery</strong>
+                            <p style="margin: 0.25rem 0 0 0; color: #666; font-size: 0.9rem;">Pay when you receive your order</p>
+                        </div>
+                    </div>
+
+                    <div class="payment-option" style="display: flex; align-items: center; padding: 1rem; border: 2px solid #ddd; border-radius: 8px; margin-bottom: 1rem; cursor: pointer;"
+                         onclick="selectPayment('moncash')">
+                        <input type="radio" name="payment_method" value="moncash" style="margin-right: 1rem;" required>
+                        <div>
+                            <strong>📱 MonCash</strong>
+                            <p style="margin: 0.25rem 0 0 0; color: #666; font-size: 0.9rem;">Pay securely with MonCash</p>
+                        </div>
+                    </div>
+
+                    <div class="payment-option" style="display: flex; align-items: center; padding: 1rem; border: 2px solid #ddd; border-radius: 8px; margin-bottom: 1rem; cursor: pointer;"
+                         onclick="selectPayment('natcash')">
+                        <input type="radio" name="payment_method" value="natcash" style="margin-right: 1rem;" required>
+                        <div>
+                            <strong>💳 NatCash</strong>
+                            <p style="margin: 0.25rem 0 0 0; color: #666; font-size: 0.9rem;">Pay securely with NatCash</p>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-success" style="width: 100%; padding: 1rem; font-size: 1.1rem;">
+                    Place Order
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Order Summary -->
+    <div>
+        <div class="card" style="padding: 1.5rem; position: sticky; top: 2rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h3 style="color: var(--primary-blue);">Order Summary</h3>
+                <a href="{{ url_for('cart') }}" class="btn btn-primary" style="padding: 0.5rem 1rem; font-size: 0.9rem;">Edit Cart</a>
+            </div>
+
+            <!-- Order Items with Quantity Controls -->
+            <div style="margin-bottom: 1.5rem;">
+                {% for item in cart_items %}
+                <div class="checkout-item" id="checkout-item-{{ item.id }}" style="display: flex; gap: 1rem; padding: 1rem 0; border-bottom: 1px solid #eee; align-items: center;">
+                    <img src="{{ item.image }}" alt="{{ item.name }}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px;">
+
+                    <div style="flex: 1;">
+                        <h4 style="margin-bottom: 0.25rem; font-size: 1rem;">{{ item.name }}</h4>
+                        <p style="margin: 0; color: #666; font-size: 0.9rem;">{{ item.brand }}</p>
+                        <div style="font-weight: bold; color: var(--primary-blue); margin-top: 0.25rem;">
+                            ${{ "%.2f"|format(item.price) }}
+                        </div>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; align-items: end; gap: 0.5rem;">
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <button onclick="updateCheckoutQuantity({{ item.id }}, 'decrease')"
+                                    style="padding: 0.5rem; border: 1px solid #ddd; background: white; cursor: pointer; border-radius: 4px; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.8rem;">-</button>
+                            <span id="checkout-quantity-{{ item.id }}" style="padding: 0.5rem 0.75rem; border: 1px solid #ddd; min-width: 30px; text-align: center; font-weight: bold; font-size: 0.9rem;">{{ item.quantity }}</span>
+                            <button onclick="updateCheckoutQuantity({{ item.id }}, 'increase')"
+                                    style="padding: 0.5rem; border: 1px solid #ddd; background: white; cursor: pointer; border-radius: 4px; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.8rem;">+</button>
+                        </div>
+                        <div style="font-weight: bold; font-size: 1rem;">
+                            $<span id="checkout-item-total-{{ item.id }}">{{ "%.2f"|format(item.item_total) }}</span>
+                        </div>
+                        <button onclick="removeFromCheckout({{ item.id }})" class="btn btn-danger" style="padding: 0.25rem 0.5rem; font-size: 0.7rem;">Remove</button>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Price Breakdown -->
+            <div style="border-top: 2px solid #eee; padding-top: 1rem;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                    <span>Subtotal:</span>
+                    <span>$<span id="checkout-subtotal">{{ "%.2f"|format(subtotal) }}</span></span>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                    <span>Shipping:</span>
+                    <span id="checkout-shipping">
+                        {% if shipping == 0 %}
+                            <span class="text-success">FREE</span>
+                        {% else %}
+                            ${{ "%.2f"|format(shipping) }}
+                        {% endif %}
+                    </span>
+                </div>
+
+                <hr style="margin: 1rem 0;">
+
+                <div style="display: flex; justify-content: space-between; font-size: 1.2rem; font-weight: bold;">
+                    <span>Total:</span>
+                    <span>$<span id="checkout-total">{{ "%.2f"|format(final_total) }}</span></span>
+                </div>
+            </div>
+
+            {% if shipping > 0 %}
+            <div style="background: var(--primary-yellow); padding: 1rem; border-radius: 4px; margin-top: 1.5rem; text-align: center;">
+                <strong>Add $<span id="checkout-shipping-difference">{{ "%.2f"|format(35 - subtotal) }}</span> to get FREE shipping!</strong>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+    const productPrices = {
+        {% for item in cart_items %}
+        {{ item.id }}: {{ item.price }},
+        {% endfor %}
+    };
+
+    function selectPayment(method) {
+        document.querySelectorAll('.payment-option').forEach(option => {
+            option.style.borderColor = '#ddd';
+        });
+        event.currentTarget.style.borderColor = 'var(--primary-blue)';
+        event.currentTarget.querySelector('input').checked = true;
+    }
+
+    function updateCheckoutQuantity(productId, action) {
+        const quantityElement = document.getElementById(`checkout-quantity-${productId}`);
+        const itemTotalElement = document.getElementById(`checkout-item-total-${productId}`);
+        let currentQuantity = parseInt(quantityElement.textContent);
+
+        if (action === 'increase') {
+            currentQuantity += 1;
+        } else if (action === 'decrease') {
+            if (currentQuantity > 1) {
+                currentQuantity -= 1;
+            } else {
+                removeFromCheckout(productId);
+                return;
+            }
+        }
+
+        quantityElement.textContent = currentQuantity;
+        quantityElement.classList.add('item-updated');
+        setTimeout(() => {
+            quantityElement.classList.remove('item-updated');
+        }, 1000);
+
+        const formData = new FormData();
+        formData.append('product_id', productId);
+        formData.append('action', action);
+
+        fetch('/update_cart_quantity', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                if (data.item_total) {
+                    itemTotalElement.textContent = parseFloat(data.item_total).toFixed(2);
+                    itemTotalElement.classList.add('item-updated');
+                    setTimeout(() => {
+                        itemTotalElement.classList.remove('item-updated');
+                    }, 1000);
+                }
+                updateCheckoutTotals();
+                updateCartBadge(data.cart_count);
+            } else {
+                console.error('Server error:', data.message);
+                location.reload();
+            }
+        })
+        .catch(error => {
+            console.error('Error updating quantity:', error);
+            location.reload();
+        });
+    }
+
+    function updateCheckoutTotals() {
+        let subtotal = 0;
+        const itemTotalElements = document.querySelectorAll('[id^="checkout-item-total-"]');
+
+        itemTotalElements.forEach(itemTotalElement => {
+            const itemTotal = parseFloat(itemTotalElement.textContent);
+            if (!isNaN(itemTotal)) {
+                subtotal += itemTotal;
+            }
+        });
+
+        const shipping = subtotal >= 35 ? 0 : 4.99;
+        const total = subtotal + shipping;
+
+        document.getElementById('checkout-subtotal').textContent = subtotal.toFixed(2);
+        document.getElementById('checkout-total').textContent = total.toFixed(2);
+
+        const shippingDisplay = document.getElementById('checkout-shipping');
+        if (shipping === 0) {
+            shippingDisplay.innerHTML = '<span class="text-success">FREE</span>';
+        } else {
+            shippingDisplay.textContent = '$' + shipping.toFixed(2);
+        }
+
+        const shippingMessage = document.querySelector('[style*="background: var(--primary-yellow)"]');
+        const shippingDifference = document.getElementById('checkout-shipping-difference');
+        if (shippingDifference) {
+            if (subtotal < 35) {
+                shippingDifference.textContent = (35 - subtotal).toFixed(2);
+                if (shippingMessage) {
+                    shippingMessage.style.display = 'block';
+                }
+            } else {
+                if (shippingMessage) {
+                    shippingMessage.style.display = 'none';
+                }
+            }
+        }
+    }
+
+    function removeFromCheckout(productId) {
+        if (!confirm('Are you sure you want to remove this item from your cart?')) {
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('product_id', productId);
+
+        fetch('/remove_from_cart', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const itemElement = document.getElementById(`checkout-item-${productId}`);
+                if (itemElement) {
+                    itemElement.style.transition = 'all 0.3s ease';
+                    itemElement.style.opacity = '0';
+                    itemElement.style.height = '0';
+                    itemElement.style.padding = '0';
+                    itemElement.style.margin = '0';
+                    itemElement.style.overflow = 'hidden';
+
+                    setTimeout(() => {
+                        itemElement.remove();
+                        updateCartBadge(data.cart_count);
+                        updateCheckoutTotals();
+                        if (data.cart_count === 0) {
+                            setTimeout(() => {
+                                window.location.href = "{{ url_for('cart') }}";
+                            }, 500);
+                        }
+                    }, 300);
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error removing item:', error);
+            location.reload();
+        });
+    }
+
+    function updateCartBadge(count) {
+        const cartBadge = document.querySelector('.cart-badge');
+        if (cartBadge) {
+            if (count > 0) {
+                cartBadge.textContent = count;
+                cartBadge.style.display = 'flex';
+            } else {
+                cartBadge.style.display = 'none';
+            }
+        }
+    }
+
+    document.getElementById('checkout-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const cartItems = document.querySelectorAll('.checkout-item');
+        if (cartItems.length === 0) {
+            alert('Your cart is empty. Please add items before placing an order.');
+            return;
+        }
+
+        const formData = new FormData(this);
+        const submitBtn = this.querySelector('button[type="submit"]');
+        const originalText = submitBtn.textContent;
+        submitBtn.textContent = 'Placing Order...';
+        submitBtn.disabled = true;
+
+        fetch('/place_order', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message + '\nThank you for your order!');
+                window.location.href = '/';
+            } else {
+                alert('Error: ' + data.message);
+                submitBtn.textContent = originalText;
+                submitBtn.disabled = false;
+            }
+        })
+        .catch(error => {
+            alert('Error placing order. Please try again.');
+            console.error('Error:', error);
+            submitBtn.textContent = originalText;
+            submitBtn.disabled = false;
+        });
+    });
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const codOption = document.querySelector('input[value="cod"]');
+        if (codOption) {
+            codOption.checked = true;
+            codOption.closest('.payment-option').style.borderColor = 'var(--primary-blue)';
+        }
+        updateCheckoutTotals();
+    });
+</script>
+
+<style>
+    .checkout-item {
+        transition: all 0.3s ease;
+    }
+
+    .checkout-item:hover {
+        background-color: #f8f9fa;
+    }
+
+    @keyframes highlightUpdate {
+        0% { background-color: #e3f2fd; }
+        100% { background-color: transparent; }
+    }
+
+    .item-updated {
+        animation: highlightUpdate 1s ease;
+    }
+</style>
+{% endblock %}
