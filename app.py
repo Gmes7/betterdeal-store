@@ -9,10 +9,7 @@ import smtplib
 import json
 import threading
 import os
-from flask import Flask, session
-from flask_session import Session  # Add this import
-
-
+from flask_session import Session
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'your-secret-key-here-change-in-production')
@@ -26,6 +23,10 @@ app.config['SESSION_COOKIE_SECURE'] = True  # For HTTPS
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 
+# Initialize session
+Session(app)
+
+# Le reste de votre code...
 # Initialize session
 Session(app)
 # Admin credentials (change these in production)
