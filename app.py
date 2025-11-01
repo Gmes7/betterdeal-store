@@ -1,5 +1,4 @@
 from tkinter import messagebox
-
 from flask import Flask, render_template, request, session, redirect, url_for, jsonify, make_response
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -9,13 +8,27 @@ from datetime import datetime, timedelta
 import csv
 import smtplib
 import json
-import os
 import threading
+import os
+from flask import Flask, session
+from flask_session import Session  # Add this import
+
+
 
 app = Flask(__name__)
-app.secret_key = 'your-secret-key-here-change-in-production'
-app.config['SESSION_TYPE'] = 'filesystem'
+app.secret_key = os.environ.get('SECRET_KEY', 'your-secret-key-here-change-in-production')
 
+# Session configuration for production
+app.config['SESSION_TYPE'] = 'filesystem'
+app.config['SESSION_FILE_DIR'] = '/tmp/flask_session'
+app.config['SESSION_PERMANENT'] = False
+app.config['SESSION_USE_SIGNER'] = True
+app.config['SESSION_COOKIE_SECURE'] = True  # For HTTPS
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+
+# Initialize session
+Session(app)
 # Admin credentials (change these in production)
 ADMIN_USERNAME = "admin"
 ADMIN_PASSWORD = "admin123"  # Change this in production
@@ -582,7 +595,15 @@ def get_financial_reports():
 def get_cart_count():
     """Get total number of items in cart"""
     cart = session.get('cart', {})
-    return sum(item['quantity'] for item in cart.values())
+    total = 0
+    for item in cart.values():
+        if isinstance(item, dict):
+            # New format: {'quantity': X}
+            total += item.get('quantity', 0)
+        else:
+            # Old format: just the quantity number
+            total += item
+    return total
 
 @app.context_processor
 def inject_cart_count():
@@ -612,32 +633,45 @@ def product_detail(product_id):
         return "Product not found", 404
     return render_template('product.html', product=product)
 
+
 @app.route('/cart')
 def cart():
     cart_items = []
-    total = 0
+    subtotal = 0
     cart_data = session.get('cart', {})
 
     products = load_products()
-    for product_id, item in cart_data.items():
+    for product_id, item_data in cart_data.items():
         product = next((p for p in products if p['id'] == int(product_id)), None)
         if product:
-            item_total = product['price'] * item['quantity']
+            # Handle both data formats
+            if isinstance(item_data, dict):
+                quantity = item_data.get('quantity', 1)
+            else:
+                quantity = item_data  # Old format
+
+            item_total = product['price'] * quantity
             cart_items.append({
-                **product,
-                'quantity': item['quantity'],
+                'id': product['id'],
+                'name': product['name'],
+                'brand': product['brand'],
+                'price': product['price'],
+                'image': product['image'],
+                'rating': product.get('rating', 4.5),
+                'quantity': quantity,
                 'item_total': item_total
             })
-            total += item_total
+            subtotal += item_total
 
-    shipping = 0 if total >= 35 else 4.99
-    final_total = total + shipping
+    shipping = 0 if subtotal >= 35 else 4.99
+    final_total = subtotal + shipping
 
     return render_template('cart.html',
                            cart_items=cart_items,
-                           subtotal=total,
+                           subtotal=subtotal,
                            shipping=shipping,
                            final_total=final_total)
+
 
 @app.route('/checkout')
 def checkout():
@@ -646,45 +680,103 @@ def checkout():
         return redirect(url_for('cart'))
 
     cart_items = []
-    total = 0
+    subtotal = 0
     products = load_products()
-    for product_id, item in cart_data.items():
+    for product_id, item_data in cart_data.items():
         product = next((p for p in products if p['id'] == int(product_id)), None)
         if product:
-            item_total = product['price'] * item['quantity']
+            # Handle both data formats
+            if isinstance(item_data, dict):
+                quantity = item_data.get('quantity', 1)
+            else:
+                quantity = item_data  # Old format
+
+            item_total = product['price'] * quantity
             cart_items.append({
-                **product,
-                'quantity': item['quantity'],
+                'id': product['id'],
+                'name': product['name'],
+                'brand': product['brand'],
+                'price': product['price'],
+                'image': product['image'],
+                'quantity': quantity,
                 'item_total': item_total
             })
-            total += item_total
+            subtotal += item_total
 
-    shipping = 0 if total >= 35 else 4.99
-    final_total = total + shipping
+    shipping = 0 if subtotal >= 35 else 4.99
+    final_total = subtotal + shipping
 
     return render_template('checkout.html',
                            cart_items=cart_items,
-                           subtotal=total,
+                           subtotal=subtotal,
                            shipping=shipping,
                            final_total=final_total)
 
+
 @app.route('/add_to_cart', methods=['POST'])
 def add_to_cart():
-    product_id = request.form.get('product_id')
-    quantity = int(request.form.get('quantity', 1))
+    try:
+        product_id = request.form.get('product_id')
+        quantity = int(request.form.get('quantity', 1))
 
-    if 'cart' not in session:
-        session['cart'] = {}
+        print(f"🛒 ADD_TO_CART - Product ID: {product_id}, Quantity: {quantity}")
 
-    cart = session['cart']
+        # Vérifier que le produit existe
+        products = load_products()
+        product = next((p for p in products if p['id'] == int(product_id)), None)
+        if not product:
+            return jsonify({'success': False, 'message': 'Product not found'})
 
-    if product_id in cart:
-        cart[product_id]['quantity'] += quantity
-    else:
-        cart[product_id] = {'quantity': quantity}
+        # Initialiser le panier si nécessaire
+        if 'cart' not in session:
+            session['cart'] = {}
+            print("🛒 New cart created")
 
-    session.modified = True
-    return jsonify({'success': True, 'cart_count': get_cart_count()})
+        cart = session['cart']
+        product_id_str = str(product_id)
+
+        # Ajouter ou mettre à jour le produit
+        if product_id_str in cart:
+            if isinstance(cart[product_id_str], dict):
+                cart[product_id_str]['quantity'] += quantity
+            else:
+                # Convertir l'ancien format
+                cart[product_id_str] = {'quantity': cart[product_id_str] + quantity}
+            print(f"🛒 Updated product {product_id} to quantity {cart[product_id_str]['quantity']}")
+        else:
+            cart[product_id_str] = {'quantity': quantity}
+            print(f"🛒 Added new product {product_id} with quantity {quantity}")
+
+        # Sauvegarder la session
+        session['cart'] = cart
+        session.modified = True
+
+        # Forcer la sauvegarde
+        if hasattr(session, 'save'):
+            session.save()
+
+        cart_count = get_cart_count()
+        print(f"🛒 Final cart count: {cart_count}")
+        print(f"🛒 Cart contents: {cart}")
+
+        return jsonify({
+            'success': True,
+            'cart_count': cart_count,
+            'message': f'{product["name"]} added to cart!'
+        })
+
+    except Exception as e:
+        print(f"❌ ERROR in add_to_cart: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'message': f'Error: {str(e)}'})
+
+@app.route('/reset_cart')
+def reset_cart():
+    """Temporary route to reset cart format"""
+    session.pop('cart', None)
+    return "Cart reset successfully. <a href='/'>Go Home</a>"
+
 
 @app.route('/update_cart_quantity', methods=['POST'])
 def update_cart_quantity():
@@ -693,20 +785,29 @@ def update_cart_quantity():
         product_id = request.form.get('product_id')
         action = request.form.get('action')
 
+        print(f"Updating cart: product_id={product_id}, action={action}")  # Debug log
+
         if 'cart' not in session:
             session['cart'] = {}
+            print("Cart initialized")  # Debug log
 
         cart = session['cart']
 
         if product_id in cart:
             if action == 'increase':
                 cart[product_id]['quantity'] += 1
+                print(f"Increased quantity to: {cart[product_id]['quantity']}")  # Debug log
             elif action == 'decrease':
                 if cart[product_id]['quantity'] > 1:
                     cart[product_id]['quantity'] -= 1
+                    print(f"Decreased quantity to: {cart[product_id]['quantity']}")  # Debug log
                 else:
                     # Remove item if quantity becomes 0
                     cart.pop(product_id, None)
+                    print("Item removed from cart")  # Debug log
+        else:
+            print(f"Product {product_id} not found in cart")  # Debug log
+            return jsonify({'success': False, 'message': 'Product not in cart'})
 
         # Calculate the updated item total
         products = load_products()
@@ -715,8 +816,15 @@ def update_cart_quantity():
         if product and product_id in cart:
             item_total = product['price'] * cart[product_id]['quantity']
 
+        # Ensure session is saved
         session['cart'] = cart
         session.modified = True
+
+        # Force session save
+        if hasattr(session, 'save'):
+            session.save()
+
+        print(f"Session saved: {session.get('cart')}")  # Debug log
 
         return jsonify({
             'success': True,
@@ -725,7 +833,9 @@ def update_cart_quantity():
             'cart': cart
         })
     except Exception as e:
+        print(f"Error in update_cart_quantity: {str(e)}")  # Debug log
         return jsonify({'success': False, 'message': str(e)})
+
 
 @app.route('/remove_from_cart', methods=['POST'])
 def remove_from_cart():
@@ -1167,6 +1277,16 @@ def admin_add_employee():
 
     return render_template('admin_add_employee.html')
 
+@app.route('/debug_session')
+def debug_session():
+    session['test'] = 'session_works'
+    session.modified = True
+    return jsonify({
+        'session_id': session.sid,
+        'session_data': dict(session),
+        'cart': session.get('cart', {})
+    })
+
 @app.route('/admin/employees/edit/<int:employee_id>', methods=['GET', 'POST'])
 def admin_edit_employee(employee_id):
     """Edit employee"""
@@ -1195,14 +1315,28 @@ def admin_edit_employee(employee_id):
 
     return render_template('admin_edit_employee.html', employee=employee)
 
+
 @app.route('/admin/expenses')
 def admin_expenses():
     """Expense management"""
     if not session.get('admin_logged_in'):
         return redirect(url_for('admin_login_page'))
 
-    expenses = load_expenses()
-    return render_template('admin_expenses.html', expenses=expenses)
+    # Forcer des données de test
+    test_expenses = [
+        {
+            "id": 1,
+            "date": "2024-03-01",
+            "category": "Test",
+            "description": "Test Expense",
+            "amount": 100,
+            "payment_method": "cash"
+        }
+    ]
+
+    return render_template('admin_expenses.html', expenses=test_expenses)
+
+
 
 @app.route('/admin/expenses/add', methods=['GET', 'POST'])
 def admin_add_expense():
@@ -1274,6 +1408,7 @@ def admin_export_report():
 
     return response
 
+
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5001))
+    port = int(os.environ.get('PORT', 10000))
     app.run(host='0.0.0.0', port=port, debug=False)

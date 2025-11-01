@@ -246,10 +246,11 @@
             <div class="chart-bar">
                 {% for month in monthly_data %}
                 <div class="chart-column">
-                    <div class="chart-bar-revenue" style="height: {{ (month.revenue / (monthly_data|map(attribute='revenue')|max / 200))|round }}px;" title="Revenue: ${{ "%.2f"|format(month.revenue) }}"></div>
-                    <div class="chart-bar-expenses" style="height: {{ (month.expenses / (monthly_data|map(attribute='revenue')|max / 200))|round }}px;" title="Expenses: ${{ "%.2f"|format(month.expenses) }}"></div>
-                    <div class="chart-bar-profit" style="height: {{ ((month.profit if month.profit > 0 else 0) / (monthly_data|map(attribute='revenue')|max / 200))|round }}px;" title="Profit: ${{ "%.2f"|format(month.profit) }}"></div>
-                    <div class="chart-label">{{ month.month[5:7] }}/{{ month.month[2:4] }}</div>
+                    {% set max_revenue = monthly_data|map(attribute='revenue')|max %}
+                    {% set scale = max_revenue / 180 if max_revenue > 0 else 1 %}
+                    <div class="chart-bar-revenue" style="height: {{ (month.revenue / scale)|round }}px;" title="Revenue: ${{ "%.2f"|format(month.revenue) }}"></div>
+                    <div class="chart-bar-expenses" style="height: {{ (month.expenses / scale)|round }}px;" title="Expenses: ${{ "%.2f"|format(month.expenses) }}"></div>
+                    <div class="chart-bar-profit" style="height: {{ ((month.profit if month.profit > 0 else 0) / scale)|round }}px;" title="Profit: ${{ "%.2f"|format(month.profit) }}"></div>
                 </div>
                 {% endfor %}
             </div>
@@ -287,7 +288,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for month in monthly_data|reverse %}
+                    {% for month in monthly_data[::-1] %}
                     <tr>
                         <td><strong>{{ month.month }}</strong></td>
                         <td style="color: var(--success);">${{ "%.2f"|format(month.revenue) }}</td>
@@ -295,7 +296,7 @@
                         <td style="color: {% if month.profit >= 0 %}var(--success){% else %}var(--danger){% endif %};">
                             ${{ "%.2f"|format(month.profit) }}
                         </td>
-                        <td style="color: {% if (month.profit/month.revenue*100) >= 0 %}var(--success){% else %}var(--danger){% endif %};">
+                        <td style="color: {% if month.revenue > 0 and (month.profit/month.revenue*100) >= 0 %}var(--success){% else %}var(--danger){% endif %};">
                             {{ "%.1f"|format(month.profit/month.revenue*100) if month.revenue > 0 else 0 }}%
                         </td>
                     </tr>
@@ -340,21 +341,3 @@
 </body>
 </html>
 
-<nav class="admin-nav">
-    <a href="{{ url_for('admin_dashboard') }}">Dashboard</a>
-    <a href="{{ url_for('admin_products') }}">Products</a>
-    <a href="{{ url_for('admin_stock_management') }}">Stock Management</a>
-    <a href="{{ url_for('admin_orders') }}">Order Management</a>
-    <a href="{{ url_for('admin_add_product') }}">Add Product</a>
-</nav>
-<nav class="admin-nav">
-    <a href="{{ url_for('admin_dashboard') }}">Main Dashboard</a>
-    <a href="{{ url_for('admin_business_dashboard') }}">Business Dashboard</a>
-    <a href="{{ url_for('admin_financial_reports') }}">Financial Reports</a>
-    <a href="{{ url_for('admin_employees') }}">Employees</a>
-    <a href="{{ url_for('admin_expenses') }}">Expenses</a>
-    <a href="{{ url_for('admin_payroll') }}">Payroll</a>
-    <a href="{{ url_for('admin_orders') }}">Orders</a>
-    <a href="{{ url_for('admin_products') }}">Products</a>
-    <a href="{{ url_for('admin_stock_management') }}">Stock Management</a>
-</nav>
